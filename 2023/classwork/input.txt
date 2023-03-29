@@ -1,0 +1,5 @@
+1 Lenovo 3000 0 Intel
+2 Acer 2000 14.2 32
+1 Acer 2001 1 Intel
+2 Lenovo 3800 15.2 64
+1 Acer 3400 1 AMD
