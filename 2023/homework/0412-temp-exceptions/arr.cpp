@@ -19,6 +19,7 @@ T* ModifyArray(T* arr, int &n)
   }
 
   n = new_n;
+  delete[] arr;
   return new_arr;
 }
 
