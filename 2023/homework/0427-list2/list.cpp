@@ -38,6 +38,7 @@ int main()
       {
         i = str_list.erase(i);
         i--;
+        dot = find(str_list.begin(), str_list.end(), '.');
       }
     }
 
