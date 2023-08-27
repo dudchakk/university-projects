@@ -1,1 +1,1 @@
-# Programming-2022
+# university-projects
