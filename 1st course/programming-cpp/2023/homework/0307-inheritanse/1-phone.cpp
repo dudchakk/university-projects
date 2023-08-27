@@ -28,9 +28,10 @@ class Telephone
   protected:
     string name_;
     string firm_;
-    int price_;
+    
 
   public:
+  int price_;
     Telephone(): name_(""), firm_(""), price_(0) {}
     Telephone(string n, string f, float p): name_(n), firm_(f), price_(p) {}
 
@@ -60,6 +61,11 @@ class Telephone
     bool operator<(const Telephone &t)
     {
       return price_ < t.price_;
+    }
+
+    int operator-()
+    {
+      return 0 - price_;
     }
 
     int getPrice() { return price_; }
@@ -111,43 +117,47 @@ class RadioPhone : public Telephone
 
 int main()
 {
-  vector<Telephone*> arr;
-  ifstream file1("input1.txt");
-  ofstream file2("output1.txt");
+  Telephone t;
+  t.price_ = 5;
+  cout << -t;
 
-  int sum = 0;
+  // vector<Telephone*> arr;
+  // ifstream file1("input1.txt");
+  // ofstream file2("output1.txt");
 
-  while(!file1.eof())
-  {
-    Telephone* temp;
-    int n;
-    file1 >> n;
+  // int sum = 0;
 
-    if(n == 1)
-      temp = new MobPhone();
-    else
-    if(n == 2)
-      temp = new RadioPhone();
+  // while(!file1.eof())
+  // {
+  //   Telephone* temp;
+  //   int n;
+  //   file1 >> n;
+
+  //   if(n == 1)
+  //     temp = new MobPhone();
+  //   else
+  //   if(n == 2)
+  //     temp = new RadioPhone();
     
-    temp->input(file1);
-    arr.push_back(temp);
-    sum += temp->getPrice();
-  }
+  //   temp->input(file1);
+  //   arr.push_back(temp);
+  //   sum += temp->getPrice();
+  // }
   
-  sort(arr.begin(), arr.end(), [](Telephone* t1, Telephone* t2) { return *t1 < *t2; });
+  // sort(arr.begin(), arr.end(), [](Telephone* t1, Telephone* t2) { return *t1 < *t2; });
 
-  file2 << "All phones, sorted by price:" << endl;
-  for(int i = 0; i < arr.size(); i++)
-    arr[i]->output(file2);
-  file2 << "Total sum: " << sum << endl << endl;
+  // file2 << "All phones, sorted by price:" << endl;
+  // for(int i = 0; i < arr.size(); i++)
+  //   arr[i]->output(file2);
+  // file2 << "Total sum: " << sum << endl << endl;
 
-  file2 << "Radio phones with auto answer:" << endl;
-  for(int i = 0; i < arr.size(); i++)
-  {
-    if(arr[i]->isAutoAnswer() == 1)
-      arr[i]->output(file2);
-  }
+  // file2 << "Radio phones with auto answer:" << endl;
+  // for(int i = 0; i < arr.size(); i++)
+  // {
+  //   if(arr[i]->isAutoAnswer() == 1)
+  //     arr[i]->output(file2);
+  // }
 
-  file1.close();
-  file2.close();
+  // file1.close();
+  // file2.close();
 }

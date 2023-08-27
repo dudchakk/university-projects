@@ -1,6 +1,9 @@
 #include <iostream>
 #include <list>
 #include <algorithm>
+#include <locale>
+#include <string>
+#include <Windows.h>
 
 using namespace std;
 
@@ -12,6 +15,9 @@ using namespace std;
 
 int main()
 {
+  SetConsoleCP(1251);
+  SetConsoleOutputCP(1251);
+    
   try 
   {
     list<char> str_list;
@@ -20,6 +26,8 @@ int main()
     string s;
     cout << "Enter char sequence: ";
     cin >> s;
+
+    //cout << "s: " << s;
     
     for(size_t i = 0; i < s.length(); i++)
     {
