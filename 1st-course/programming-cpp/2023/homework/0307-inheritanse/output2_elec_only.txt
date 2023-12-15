@@ -1,0 +1,7 @@
+subject: geography, number: 7, carrier name: comp
+subject: geography, number: 29, carrier name: comp
+subject: math, number: 15, carrier name: comp
+subject: physics, number: 5, carrier name: comp
+subject: physics, number: 8, carrier name: comp
+
+Number of electronic cheat sheets: 5

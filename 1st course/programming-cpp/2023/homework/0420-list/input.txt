@@ -1,8 +1,0 @@
-1 Ivan 03/03/2023 clay 13.3 34.5
-2 Ostap 02/04/2022 cement 16.7 54.6
-1 Kyrylo 17/10/2022 clay 16.3 67.5
-2 Ivan 05/03/2023 cement 18.4 37.5
-3 Mykola 03/07/2022 bricks 36.3 156.5
-2 Illya 02/08/2022 wood 28.7 67.6
-1 Maksym 18/04/2022 wood 19.3 56.5
-3 Marko 12/03/2022 bricks 36.4 101.5

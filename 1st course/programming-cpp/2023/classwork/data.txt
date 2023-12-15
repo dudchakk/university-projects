@@ -1,2 +1,0 @@
-1 name group1 100
-2 name 18 

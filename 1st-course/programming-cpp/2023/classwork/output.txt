@@ -1,0 +1,12 @@
+All phones, sorted by price:
+firm: Acer, price: 2000, diagonal: 14.2, memory: 32
+firm: Acer, price: 2001, type: office, processor: Intel
+firm: Lenovo, price: 3000, type: gaming, processor: Intel
+firm: Acer, price: 3400, type: office, processor: AMD
+firm: Lenovo, price: 3800, diagonal: 15.2, memory: 64
+
+Total price: 14201
+
+Stationary computers from the Acer:
+firm: Acer, price: 2001, type: office, processor: Intel
+firm: Acer, price: 3400, type: office, processor: AMD

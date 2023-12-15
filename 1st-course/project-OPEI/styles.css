@@ -1,0 +1,104 @@
+.body1 {
+  background-image: url(3.webp);
+}
+
+.body2 {
+  background-color: ivory;
+}
+
+.menu {
+  background-color: lightgray;
+  text-align: center;
+  word-spacing: 70px;
+  padding: 5px;
+  margin-bottom: 40px;
+}
+
+.menu a {
+  color: black;
+  text-decoration: none;
+  padding: 3px;
+  border-radius: 7px;
+}
+
+.menu a:hover {
+  background-color: azure;
+}
+
+.button {
+  text-align: center;
+  margin: 30px;
+}
+
+.button a {
+  color:black;
+  text-decoration: none;
+  padding: 5px 15px;
+  border-radius: 7px;
+  background-color: lightgray;
+}
+
+.button a:hover {
+  color: azure;
+}
+
+.text {
+  width: 400px;
+  margin-left: 12px;
+}
+
+.h1 {
+  margin-top: 40px;
+  margin-bottom: 70px;
+  margin-left: 12px;
+}
+
+.submain {
+  max-width: 60%;
+  margin: auto;
+}
+
+.row {
+  display: flex;
+}
+
+ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+ul li {
+  border-bottom: 1px solid gray;
+  margin-bottom: 10px;
+}
+
+table, th, td {
+  border: 1px solid;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 5px;
+}
+
+.table-m {
+  margin-bottom: 30px;
+}
+
+h2 {
+  margin-top: 30px;
+}
+
+body {
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
+
+.vert-align {
+  margin-top: auto;
+  margin-bottom: auto;
+  margin-left: 30px;
+}
+
+video {
+  width: 500px;
+}

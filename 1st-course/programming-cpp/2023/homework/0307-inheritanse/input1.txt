@@ -1,0 +1,10 @@
+2 Phone1 Panasonic 400 100 0
+2 Phone2 Panasonic 320 70 1
+1 Phone3 Xiaomi 240 blue 32
+2 Phone4 Philips 330 300 0
+1 Phone5 Xiaomi 200 red 64
+2 Phone6 Alcatel 430 200 1
+1 Phone7 Samsung 360 white 16
+2 Phone8 Panasonic 300 130 1
+1 Phone9 Huawei 300 black 32
+1 Phone10 Samsung 310 black 32

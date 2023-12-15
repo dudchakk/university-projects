@@ -1,0 +1,16 @@
+subject: biology, number: 9, size: 7, hide place: desk
+subject: chemistry, number: 21, size: 8, hide place: desk
+subject: chemistry, number: 34, size: 4, hide place: copybook
+subject: english, number: 4, carrier name: phone
+subject: english, number: 13, size: 3, hide place: hand
+subject: geography, number: 7, carrier name: comp
+subject: geography, number: 29, carrier name: comp
+subject: math, number: 1, size: 7, hide place: desk
+subject: math, number: 3, size: 8, hide place: clothes
+subject: math, number: 6, size: 3, hide place: desk
+subject: math, number: 15, carrier name: comp
+subject: math, number: 30, carrier name: phone
+subject: physics, number: 2, carrier name: phone
+subject: physics, number: 5, carrier name: comp
+subject: physics, number: 8, carrier name: comp
+subject: physics, number: 17, carrier name: watch
