@@ -1,6 +1,8 @@
-﻿using System;
+namespace TestProjectWorkers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Xunit;
 
 public class Employee
 {
@@ -70,18 +72,24 @@ public class Service
     }
 }
 
-class Program
+public class WorkersData : IDisposable
 {
-    static void Main(string[] args)
+    public List<Employee> Employees { get; }
+    public List<TimesheetEntry> TimesheetEntries { get; }
+    public List<ServiceReceipt> ServiceReceipts { get; }
+    public List<Rates> Rates { get; }
+    public List<Service> Services { get; }
+
+    public WorkersData()
     {
-        List<Employee> employees = new List<Employee>
+        Employees = new List<Employee>
         {
             new Employee(1, 3, "Smith"),
             new Employee(2, 2, "Johnson"),
             new Employee(3, 1, "Williams")
         };
 
-        List<TimesheetEntry> timesheetEntries = new List<TimesheetEntry>
+        TimesheetEntries = new List<TimesheetEntry>
         {
             new TimesheetEntry(1, new DateTime(2023, 4, 4), 8),
             new TimesheetEntry(1, new DateTime(2023, 4, 24), 8),
@@ -90,7 +98,7 @@ class Program
             new TimesheetEntry(3, new DateTime(2023, 3, 15), 6)
         };
 
-        List<ServiceReceipt> serviceReceipts = new List<ServiceReceipt>
+        ServiceReceipts = new List<ServiceReceipt>
         {
             new ServiceReceipt(1, new DateTime(2023, 6, 10), 101),
             new ServiceReceipt(2, new DateTime(2023, 4, 15), 101),
@@ -98,54 +106,173 @@ class Program
             new ServiceReceipt(3, new DateTime(2023, 12, 20), 103)
         };
 
-        List<Rates> rates = new List<Rates>
+        Rates = new List<Rates>
         {
             new Rates(1, 15.50m),
             new Rates(2, 20.25m),
             new Rates(3, 25.75m)
         };
 
-        List<Service> services = new List<Service>
+        Services = new List<Service>
         {
             new Service(101, "Cleaning", 30.50m),
             new Service(102, "Repair", 50.75m),
             new Service(103, "Consulting", 80.00m)
         };
+    }
+    public void Dispose()
+    {
+        Employees.Clear();
+        TimesheetEntries.Clear();
+        ServiceReceipts.Clear();
+        Rates.Clear();
+        Services.Clear();
+    }
+}
 
-        Console.WriteLine("Employees:");
-        foreach (var employee in employees)
+public class ClassFunctionalityTests : IClassFixture<WorkersData>
+{
+    WorkersData fixture;
+    public ClassFunctionalityTests(WorkersData fixture)
+    {
+        this.fixture = fixture;
+    }
+
+    [Fact]
+    public void TestEmployeeFunctionality()
+    {
+        int id = 1;
+        int gradeNumber = 3;
+        string lastName = "Smith";
+        var employee1 = fixture.Employees[0];
+
+        Assert.Equal(id, employee1.Id);
+        Assert.Equal(gradeNumber, employee1.GradeNumber);
+        Assert.Equal(lastName, employee1.LastName);
+    }
+
+    [Fact]
+    public void TestTimesheetEntryFunctionality()
+    {
+        int employeeId = 1;
+        DateTime date = new DateTime(2023, 4, 4);
+        int hoursWorked = 8;
+        var timesheetEntry1 = fixture.TimesheetEntries[0];
+
+        Assert.Equal(employeeId, timesheetEntry1.EmployeeId);
+        Assert.Equal(date, timesheetEntry1.Date);
+        Assert.Equal(hoursWorked, timesheetEntry1.HoursWorked);
+    }
+
+    [Fact]
+    public void TestServiceReceiptFunctionality()
+    {
+        int employeeId = 1;
+        DateTime date = new DateTime(2023, 6, 10);
+        int serviceId = 101;
+        var serviceReceipt1 = fixture.ServiceReceipts[0];
+
+        Assert.Equal(employeeId, serviceReceipt1.EmployeeId);
+        Assert.Equal(date, serviceReceipt1.Date);
+        Assert.Equal(serviceId, serviceReceipt1.ServiceId);
+    }
+
+    [Fact]
+    public void TestRatesFunctionality()
+    {
+        int gradeNumber = 1;
+        decimal hourlyRate = 15.50m;
+        var rate1 = fixture.Rates[0];
+
+        Assert.Equal(gradeNumber, rate1.GradeNumber);
+        Assert.Equal(hourlyRate, rate1.HourlyRate);
+    }
+
+    [Fact]
+    public void TestServiceFunctionality()
+    {
+        int id = 101;
+        string name = "Cleaning";
+        decimal cost = 30.50m;
+        var service1 = fixture.Services[0];
+
+        Assert.Equal(id, service1.Id);
+        Assert.Equal(name, service1.Name);
+        Assert.Equal(cost, service1.Cost);
+    }
+}
+
+public class TasksTests : IClassFixture<WorkersData>
+{
+    WorkersData fixture;
+
+    public TasksTests(WorkersData fixture)
+    {
+        this.fixture = fixture;
+    }
+
+    [Fact]
+    public void TaskATest()
+    {
+        Dictionary<int, int> taskAResult = Program.TaskA(fixture.TimesheetEntries);
+
+        var correctResult = new Dictionary<int, int>
         {
-            Console.WriteLine($"ID: {employee.Id}, Grade Number: {employee.GradeNumber}, Last Name: {employee.LastName}");
-        }
+            {4, 23},
+            {3, 14}
+        };
 
-        Console.WriteLine("\nTimesheet Entries:");
-        foreach (var entry in timesheetEntries)
+        Assert.Equal(correctResult.Count, taskAResult.Count);
+        foreach (var pair in correctResult)
         {
-            Console.WriteLine($"Employee ID: {entry.EmployeeId}, Date: {entry.Date.ToShortDateString()}, Hours Worked: {entry.HoursWorked}");
+            Assert.Equal(correctResult[pair.Key], taskAResult[pair.Key]);
         }
+    }
 
-        Console.WriteLine("\nService Receipts:");
-        foreach (var receipt in serviceReceipts)
+    [Fact]
+    public void TaskBTest()
+    {
+        Dictionary<int, decimal[]> taskBResult = Program.TaskB(fixture.Employees, fixture.TimesheetEntries, 
+        fixture.ServiceReceipts, fixture.Rates, fixture.Services);
+
+        var correctResult = new Dictionary<int, decimal[]>
         {
-            Console.WriteLine($"Employee ID: {receipt.EmployeeId}, Date: {receipt.Date.ToShortDateString()}, Service ID: {receipt.ServiceId}");
-        }
+            {1, [412.00m, 0m, 412.00m]},
+            {2, [141.75m, 81.25m, 60.50m]}
+        };
 
-        Console.WriteLine("\nRates:");
-        foreach (var rate in rates)
+        Assert.Equal(correctResult.Count, taskBResult.Count);
+        foreach (var pair in correctResult)
         {
-            Console.WriteLine($"Grade Number: {rate.GradeNumber}, Hourly Rate: {rate.HourlyRate}");
+            Assert.Equal(correctResult[pair.Key], taskBResult[pair.Key]);
         }
+    }
 
-        Console.WriteLine("\nServices:");
-        foreach (var service in services)
+    [Fact]
+    public void TaskCTest()
+    {
+        Dictionary<int, decimal> taskCResult = Program.TaskC(fixture.ServiceReceipts, fixture.Services);
+
+        var correctResult = new Dictionary<int, decimal>
         {
-            Console.WriteLine($"ID: {service.Id}, Name: {service.Name}, Cost: {service.Cost}");
+            {101, 61.00m},
+            {102, 50.75m},
+            {103, 80.00m}
+        };
+
+        Assert.Equal(correctResult.Count, taskCResult.Count);
+        foreach (var pair in correctResult)
+        {
+            Assert.Equal(correctResult[pair.Key], taskCResult[pair.Key]);
         }
+    }
+}
 
-
-        // а:
-
-        Dictionary<int, int> monthlyTotalHoursWorked = new Dictionary<int, int>();
+public class Program
+{
+    public static Dictionary<int, int> TaskA(List<TimesheetEntry> timesheetEntries)
+    {
+        var monthlyTotalHoursWorked = new Dictionary<int, int>();
 
         foreach(var entry in timesheetEntries)
         {
@@ -158,15 +285,12 @@ class Program
             monthlyTotalHoursWorked[month] += entry.HoursWorked;
         }
 
-        Console.WriteLine("\n---------------\nTask a:\n");
-        foreach (var month in monthlyTotalHoursWorked)
-        {
-            Console.WriteLine($"Місяць: {month.Key}, Загальна кількість годин: {month.Value}");
-        }
+        return monthlyTotalHoursWorked;
+    }
 
-
-        // б:
-
+    public static Dictionary<int, decimal[]> TaskB(List<Employee> employees, List<TimesheetEntry> timesheetEntries,
+    List<ServiceReceipt> serviceReceipts, List<Rates> rates, List<Service> services)
+    {
         DateTime startDate = new DateTime(2023, 4, 1);
         DateTime endDate = new DateTime(2023, 4, 30);
 
@@ -213,7 +337,6 @@ class Program
 
             decimal servicePayment = employeeServicePayment.ContainsKey(entry.EmployeeId) ? employeeServicePayment[entry.EmployeeId] : 0;
 
-            // Додавання даних в масив для кожного працівника
             if (!employeeSummary.ContainsKey(entry.EmployeeId))
             {
                 employeeSummary[entry.EmployeeId] = new decimal[3];
@@ -228,20 +351,11 @@ class Program
             employeeSummary[pair.Key][2] = difference;
         }
 
-        Console.WriteLine("\n---------------\nTask б:\n");
-        Console.WriteLine("Зарплата | Оплата послуг | До виплати");
-        
-        foreach (var employee in employees)
-        {
-            decimal salary = employeeSalary.ContainsKey(employee.Id) ? employeeSalary[employee.Id] : 0;
-            decimal servicePayment = employeeServicePayment.ContainsKey(employee.Id) ? employeeServicePayment[employee.Id] : 0;
-            decimal totalPayment = salary - servicePayment;
-            Console.WriteLine($"{employee.LastName}: {salary} год. | {servicePayment} грн. | {totalPayment} год.");
-        }
+        return employeeSummary;
+    }
 
-
-        // в:
-
+    public static Dictionary<int, decimal> TaskC(List<ServiceReceipt> serviceReceipts, List<Service> services)
+    {
         Dictionary<int, decimal> serviceTotalAmount = new Dictionary<int, decimal>();
         
         foreach (var receipt in serviceReceipts)
@@ -253,11 +367,6 @@ class Program
             serviceTotalAmount[receipt.ServiceId] += services.First(s => s.Id == receipt.ServiceId).Cost;
         }
 
-        Console.WriteLine("\n---------------\nTask в:\n");
-        Console.WriteLine("Суми за кожен вид послуги за весь період часу:");
-        foreach (var pair in serviceTotalAmount)
-        {
-            Console.WriteLine($"Послуга ID {pair.Key}: {pair.Value} грн.");
-        }
+        return serviceTotalAmount;
     }
 }
