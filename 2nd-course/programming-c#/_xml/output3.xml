@@ -1,0 +1,5 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Operations>
+  <Operation Name="Operation 1" Count="2" />
+  <Operation Name="Operation 2" Count="1" />
+</Operations>

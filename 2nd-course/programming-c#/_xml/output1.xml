@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Categories>
+  <Category Name="Category 1">
+    <Operation Name="Operation 1" Count="4" />
+    <Operation Name="Operation 2" Count="1" />
+  </Category>
+  <Category Name="Category 2">
+    <Operation Name="Operation 2" Count="2" />
+    <Operation Name="Operation 1" Count="1" />
+  </Category>
+</Categories>
