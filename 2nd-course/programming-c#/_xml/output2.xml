@@ -1,11 +1,1 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Categories>
-  <Category Name="Category 1">
-    <Operation Name="Operation 1" TotalCost="41.00" />
-    <Operation Name="Operation 2" TotalCost="0" />
-  </Category>
-  <Category Name="Category 2">
-    <Operation Name="Operation 2" TotalCost="30.00" />
-    <Operation Name="Operation 1" TotalCost="20.50" />
-  </Category>
-</Categories>
+﻿
