@@ -1,0 +1,25 @@
+    public Task(int id, string subjName, DateTime deadline)
+    {
+        Id = id;
+        SubjectName = subjName;
+        Deadline = deadline;
+    }
+
+public void ReadTasksFromCSV(string filePath)
+{
+    using (var reader = new StreamReader(filePath))
+    {
+        reader.ReadLine();
+        while (!reader.EndOfStream)
+        {
+            var line = reader.ReadLine();
+            var values = line.Split(',');
+
+            int id = int.Parse(values[0]);
+            string name = values[1];
+            DateTime deadline = DateTime.Parse(values[2]);
+
+            Tasks.Add(new Task(id, name, deadline));
+        }
+    }
+}
