@@ -110,13 +110,10 @@ public class Data
         var doc = new XDocument(
             new XElement("Items",
                 query.Select(group => new XElement("Group",
-                    new XAttribute("GroupName", group.GroupName),
+                    new XAttribute("Name", group.GroupName),
                     group.StudentList.Select(st => new XElement("Student",
-                        new XAttribute("StudentName", st.StudentName),
-                        st.StudentResults.Select(r => new XElement("Result",
-                        new XAttribute("R", r)
-                        )
-                    )
+                        new XAttribute("Name", st.StudentName),
+                        st.StudentResults.Select(r => new XElement("Result", r))
                     )
                 )
             )))
@@ -173,12 +170,12 @@ public class Data
 
         var doc = new XDocument(new XElement("Items",
             query.Select(g => new XElement("Group",
-                new XAttribute("GroupName", g.GroupName),
+                new XAttribute("Name", g.GroupName),
                 g.SubjectList.Select(subj => new XElement("Subject",
-                    new XAttribute("SubjectName", subj.SubjectName),
+                    new XAttribute("Name", subj.SubjectName),
                     subj.StudentList.OrderByDescending(st => st.TotalScore)
                     .Select(st => new XElement("Student",
-                        new XAttribute("StudentName", st.StudentName),
+                        new XAttribute("Name", st.StudentName),
                         new XAttribute("TotalScore", st.TotalScore)
                     ))
                 ))
@@ -236,10 +233,10 @@ public class Data
         var doc = new XDocument(
             new XElement("Items",
                 query.Select(group => new XElement("Group",
-                    new XAttribute("GroupName", group.GroupName),
+                    new XAttribute("Name", group.GroupName),
                     group.StudentList.Select(st => new XElement("Student",
-                        new XAttribute("StudentName", st.StudentName),
-                        new XAttribute("StudentScore", st.StudentScore)
+                        new XAttribute("Name", st.StudentName),
+                        new XAttribute("Score", st.StudentScore)
                     )
                     )
                 )
