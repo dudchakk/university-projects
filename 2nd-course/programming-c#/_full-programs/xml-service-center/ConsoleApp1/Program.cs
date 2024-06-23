@@ -46,7 +46,7 @@ public class Receipt
 }
 
 
-class Program
+public class Program
 {
     static void Main(string[] args)
     {
@@ -80,10 +80,12 @@ class Program
 
         int categoryId = 1;
 
+        // output1.CustomRemove(output2);
+
         Program program = new Program();
         program.TaskA(categories, operations, receipts, output1);
-        // program.TaskB(categories, operations, receipts, output2);
-        // program.TaskC(categories, operations, receipts, output3, categoryId);
+        program.TaskB(categories, operations, receipts, output2);
+        program.TaskC(categories, operations, receipts, output3, categoryId);
     }
 
     public void TaskA(List<Category> categories, List<Operation> operations, List<Receipt> receipts, string output)
@@ -124,73 +126,88 @@ class Program
         doc.Save(output);
     }
 
-    // public void TaskB(List<Category> categories, List<Operation> operations, List<Receipt> receipts, string output)
+    // public decimal CountCost(int warrantyYears, int releaseYear, decimal cost)
     // {
-    //     var query = from receipt in receipts
-    //                 join category in categories on receipt.CategoryId equals category.Id
-    //                 join operation in operations on receipt.OperationId equals operation.Id
-    //                 group new {category, operation, receipt} by category.Name into groupCategory
-    //                 orderby groupCategory.Key
-    //                 select new 
-    //                 {
-    //                     categoryName = groupCategory.Key,
-    //                     operationList = from groupC in groupCategory
-    //                                     group new {groupC.operation, groupC.receipt, groupC.category} by groupC.operation.Name
-    //                                     into groupOperation
-    //                                     orderby groupOperation
-    //                                             .Where(x => x.category.WarrantyYears + x.receipt.Year < DateTime.Now.Year)
-    //                                             .Sum(x => x.operation.Cost)
-    //                                             descending
-    //                                     select new
-    //                                     {
-    //                                         operationName = groupOperation.Key,
-    //                                         totalCost = groupOperation
-    //                                                     .Where(x => x.category.WarrantyYears + x.receipt.Year < DateTime.Now.Year)
-    //                                                     .Sum(x => x.operation.Cost)
-                                                        
-    //                                     }
-    //                 };
-    
-    //     var doc = new XDocument(
-    //         new XElement("Categories",
-    //             query.Select(category => new XElement("Category",
-    //                 new XAttribute("Name", category.categoryName),
-    //                 category.operationList.Select(op => new XElement("Operation",
-    //                     new XAttribute("Name", op.operationName),
-    //                     new XAttribute("TotalCost", op.totalCost)
-    //                 ))
-    //             ))
-    //         )
-    //     );
-
-    //     doc.Save(output);
+    //     if(warrantyYears + releaseYear >= DateTime.Now.Year) {
+    //         return 0;
+    //     }
+    //     return cost;
     // }
 
-    // public void TaskC(List<Category> categories, List<Operation> operations, List<Receipt> receipts, string output, int categoryId)
-    // {
-    //     var query = from receipt in receipts
-    //                 join category in categories on receipt.CategoryId equals category.Id
-    //                 join operation in operations on receipt.OperationId equals operation.Id
-    //                 where (category.Id == categoryId)
-    //                 && (category.WarrantyYears + receipt.Year >= DateTime.Now.Year)
-    //                 group operation by operation.Name into groupOperation
-    //                 orderby groupOperation.Count() descending
-    //                 select new
-    //                 {
-    //                     operationName = groupOperation.Key,
-    //                     operationCount = groupOperation.Count()
-    //                 };
+    public void TaskB(List<Category> categories, List<Operation> operations, List<Receipt> receipts, string output)
+    {
+        var query = from receipt in receipts
+                    join category in categories on receipt.CategoryId equals category.Id
+                    join operation in operations on receipt.OperationId equals operation.Id
+                    group new {category, operation, receipt} by category.Name into groupCategory
+                    orderby groupCategory.Key
+                    select new 
+                    {
+                        categoryName = groupCategory.Key,
+                        operationList = from groupC in groupCategory
+                                        group new {groupC.operation, groupC.receipt, groupC.category} by groupC.operation.Name
+                                        into groupOperation
+                                        orderby groupOperation
+                                                .Where(x => x.category.WarrantyYears + x.receipt.Year < DateTime.Now.Year)
+                                                .Sum(x => x.operation.Cost)
+                                                descending
+                                        select new
+                                        {
+                                            operationName = groupOperation.Key,
+                                            totalCost = groupOperation
+                                                        .Where(x => x.category.WarrantyYears + x.receipt.Year < DateTime.Now.Year)
+                                                        .Sum(x => x.operation.Cost)
+                                        }
+                    };
     
-    //     var doc = new XDocument(
-    //         new XElement("Operations",
-    //             query.Select(op => new XElement("Operation",
-    //                 new XAttribute("Name", op.operationName),
-    //                 new XAttribute("Count", op.operationCount)
-    //                 )
-    //             )
-    //         )
-    //     );
+        var doc = new XDocument(
+            new XElement("Categories",
+                query.Select(category => new XElement("Category",
+                    new XAttribute("Name", category.categoryName),
+                    category.operationList.Select(op => new XElement("Operation",
+                        new XAttribute("Name", op.operationName),
+                        new XAttribute("TotalCost", op.totalCost)
+                    ))
+                ))
+            )
+        );
 
-    //     doc.Save(output);
-    // }
+        doc.Save(output);
+    }
+
+    public void TaskC(List<Category> categories, List<Operation> operations, List<Receipt> receipts, string output, int categoryId)
+    {
+        var query = from receipt in receipts
+                    join category in categories on receipt.CategoryId equals category.Id
+                    join operation in operations on receipt.OperationId equals operation.Id
+                    where (category.Id == categoryId)
+                    && (category.WarrantyYears + receipt.Year >= DateTime.Now.Year)
+                    group operation by operation.Name into groupOperation
+                    orderby groupOperation.Count() descending
+                    select new
+                    {
+                        operationName = groupOperation.Key,
+                        operationCount = groupOperation.Count()
+                    };
+    
+        var doc = new XDocument(
+            new XElement("Operations",
+                query.Select(op => new XElement("Operation",
+                    new XAttribute("Name", op.operationName),
+                    new XAttribute("Count", op.operationCount)
+                    )
+                )
+            )
+        );
+
+        doc.Save(output);
+    }
+}
+
+public static class SampleExtensions
+{
+    public static string CustomRemove(this string str1, string InputStr)
+    {       
+        return str1.Replace(InputStr,"");
+    }
 }
