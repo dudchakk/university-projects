@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parabola Drawing</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <h1>Побудова параболи: Параметричне та Непараметричне представлення</h1>
+    <div>
+        <label for="points">Кількість точок: </label>
+        <input type="number" id="points" value="10" min="3">
+        <button onclick="draw()">Малювати</button>
+    </div>
+
+    <div class="container">
+        <div>
+            <canvas id="parametricCanvas" width="400" height="400"></canvas>
+            <p>Параметричний графік</p>
+        </div>
+        <div>
+            <canvas id="nonParametricCanvas" width="400" height="400"></canvas>
+            <p>Непараметричний графік</p>
+        </div>
+
+        <div class="info">
+            <div>
+                <h2>Параметричні характеристики:</h2>
+                <div>
+                    <span>Час виконання:</span>
+                    <span id="parametricTime"></span>
+                </div>
+                <div>
+                    <span>Максимальна різниця між аналітичними та рекурентними значеннями:</span>
+                    <span id="parametricError"></span>
+                </div>
+                <div>
+                    <span>Максимальна норма:</span>
+                    <span id="parametricArea"></span>
+                </div>
+            </div>
+            <div>
+                <h2>Непараметричні характеристики:</h2>
+                <div>
+                    <span>Час виконання:</span>
+                    <span id="nonParametricTime"></span>
+                </div>
+                <div>
+                    <span>Максимальна різниця між аналітичними та рекурентними значеннями:</span>
+                    <span id="nonParametricError"></span>
+                </div>
+                <div>
+                    <span>Максимальна норма:</span>
+                    <span id="nonParametricArea"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

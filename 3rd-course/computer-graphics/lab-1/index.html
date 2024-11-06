@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canvas Tangent Animation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div>  
+        <canvas id="myCanvas" width="800" height="600"></canvas>
+        <div id="radiusModal">
+            <label for="radiusInput">Введіть радіус кола:</label>
+            <input type="number" id="radiusInput" min="10" max="300" value="100">
+            <button id="startAnimation">Почати анімацію</button>
+        </div>
+    </div>
+
+    <button id="stopAnimation">Зупинити</button>
+    
+    <script type="module" src="view.js"></script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>

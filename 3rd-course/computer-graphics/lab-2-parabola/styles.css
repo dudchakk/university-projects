@@ -1,0 +1,48 @@
+* {
+  font-family: 'Roboto', sans-serif;
+}
+
+canvas {
+  border: 1px solid black;
+  margin-right: 20px;
+}
+
+h2 {
+  margin-top: 5px;
+}
+
+.container {
+  display: flex;
+  margin-top: 30px;
+}
+
+.info {
+  display: inline;
+}
+
+.info div {
+  margin-top: 10px;
+}
+
+.info > div {
+  border: 1px solid black;
+  border-radius: 5px;
+  background-color: #c7dbdb;
+  padding: 10px
+}
+
+.info div span:first-of-type {
+  font-weight: bold;
+}
+
+button {
+  padding: 5px 10px;
+  background-color: #c7dbdb;
+  border: 1px solid black;
+  border-radius: 3px;
+  margin-left: 10px;
+}
+
+input {
+  margin-left: 5px;
+}
