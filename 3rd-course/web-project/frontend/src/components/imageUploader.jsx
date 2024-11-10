@@ -22,7 +22,11 @@ function TextRecognition() {
                 method: 'POST',
                 body: formData,
             });
-
+            if(response.status !== 200) {
+                const { message } = await response.json();
+                setError(message);
+                return;
+            }
             const data = await response.json();
             const { jobId } = data;
 

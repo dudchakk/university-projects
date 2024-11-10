@@ -19,6 +19,11 @@ const io = new Server(httpServer, {
 
 const PORT = process.env.PORT || 5000;
 
+// Максимальна кількість невідомих у задачі (наприклад, 50)
+const MAX_UNKNOWN_VARIABLES = 30000;
+// Максимальний час виконання задачі (наприклад, 30 секунд)
+const MAX_TIME_LIMIT = 30000; // 30 секунд
+
 app.use(cors({
     origin: 'http://localhost:3000',
     methods: ['GET', 'POST'],
@@ -28,7 +33,6 @@ app.use(cors({
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Об'єкт для зберігання активних worker'ів
 const tasks = new Map();
 
 io.on('connection', (socket) => {
@@ -49,36 +53,54 @@ app.post('/api/recognize', upload.single('image'), (req, res) => {
     const imageBuffer = req.file.buffer;
     const jobId = Date.now().toString();
 
+    // Перевірка максимальних обмежень
+    if (req.file.size > 5 * 1024 * 1024) { // Приклад: обмеження за розміром файлу
+        return res.status(400).json({ message: 'Файл занадто великий' });
+    }
+
+    // Перевірка кількості "невідомих" або складності задачі
+    const taskComplexity = imageBuffer.length; // Це може бути параметр складності
+    if (taskComplexity > MAX_UNKNOWN_VARIABLES) {
+        return res.status(400).json({ message: `Задача занадто складна. Максимум: ${MAX_UNKNOWN_VARIABLES} змінних` });
+    }
+
     res.status(200).json({ jobId, message: 'Завдання розпочато' });
 
-    // Створюємо новий worker для обробки зображення
     const worker = new Worker(path.join(__dirname, 'tesseractWorker.js'), {
         workerData: { imageBuffer }
     });
 
-    // Зберігаємо worker у мапі
     tasks.set(jobId, worker);
 
-    // Отримуємо повідомлення про прогрес
+    // Встановлюємо ліміт часу для скасування завдання
+    const timeout = setTimeout(() => {
+        worker.terminate(); // Завершуємо worker, якщо час виконання перевищено
+        tasks.delete(jobId);
+        io.to(jobId).emit('error', 'Час виконання задачі перевищив ліміт');
+    }, MAX_TIME_LIMIT);
+
     worker.on('message', (message) => {
         if (message.type === 'progress') {
             io.to(jobId).emit('progress', message.data);
         } else if (message.type === 'result') {
+            clearTimeout(timeout); // Якщо задача завершена в межах часу, скасовуємо таймер
             io.to(jobId).emit('result', message.data);
-            tasks.delete(jobId); // Видаляємо завдання після завершення
-            worker.terminate(); // Завершуємо worker
+            tasks.delete(jobId);
+            worker.terminate();
         } else if (message.type === 'error') {
+            clearTimeout(timeout); // Якщо помилка, скасовуємо таймер
             io.to(jobId).emit('error', message.data);
-            tasks.delete(jobId); // Видаляємо завдання після помилки
-            worker.terminate(); // Завершуємо worker
+            tasks.delete(jobId);
+            worker.terminate();
         }
     });
 
     worker.on('error', (error) => {
         console.error('Помилка в worker:', error);
-        io.to(jobId).emit('error', error);
-        tasks.delete(jobId); // Видаляємо завдання у разі помилки
-        worker.terminate(); // Завершуємо worker
+        clearTimeout(timeout); // Скасовуємо таймер при помилці
+        // io.to(jobId).emit('error', 'Помилка обробки зображення');
+        tasks.delete(jobId);
+        worker.terminate();
     });
 
     worker.on('exit', (code) => {
@@ -86,7 +108,7 @@ app.post('/api/recognize', upload.single('image'), (req, res) => {
             console.error(`Worker завершився з кодом ${code}`);
             // io.to(jobId).emit('error', 'Помилка обробки зображення');
         }
-        tasks.delete(jobId); // Видаляємо завдання після завершення
+        tasks.delete(jobId);
     });
 });
 
