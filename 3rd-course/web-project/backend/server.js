@@ -5,6 +5,9 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const { Worker } = require('worker_threads');
 const path = require('path');
+const mongoose = require('mongoose');
+const Task = require('./models/task');
+require('dotenv').config();
 
 const app = express();
 const httpServer = createServer(app);
@@ -18,6 +21,9 @@ const io = new Server(httpServer, {
 });
 
 const PORT = process.env.PORT || 5000;
+mongoose.connect(process.env.MONGO_URI)
+.then(() => console.log('Connected to MongoDB'))
+.catch(err => console.log('MongoDB connection error:', err));
 
 // Максимальна кількість невідомих у задачі (наприклад, 50)
 const MAX_UNKNOWN_VARIABLES = 30000;
@@ -49,10 +55,20 @@ io.on('connection', (socket) => {
 });
 
 // Маршрут для обробки зображення
-app.post('/api/recognize', upload.single('image'), (req, res) => {
+app.post('/api/recognize', upload.single('image'), async (req, res) => {
     const imageBuffer = req.file.buffer;
     const jobId = Date.now().toString();
 
+    const task = new Task({
+        jobId,
+        fileName: req.file.originalname,
+        status: 'in_progress',
+        progress: 0,
+    });
+    io.emit('update-history', task); 
+
+
+    await task.save();
     // Перевірка максимальних обмежень
     if (req.file.size > 5 * 1024 * 1024) { // Приклад: обмеження за розміром файлу
         return res.status(400).json({ message: 'Файл занадто великий' });
@@ -61,6 +77,8 @@ app.post('/api/recognize', upload.single('image'), (req, res) => {
     // Перевірка кількості "невідомих" або складності задачі
     const taskComplexity = imageBuffer.length; // Це може бути параметр складності
     if (taskComplexity > MAX_UNKNOWN_VARIABLES) {
+        const task = await Task.findOneAndUpdate({ jobId }, { status: 'failed' });
+        io.emit('update-history');  
         return res.status(400).json({ message: `Задача занадто складна. Максимум: ${MAX_UNKNOWN_VARIABLES} змінних` });
     }
 
@@ -71,24 +89,30 @@ app.post('/api/recognize', upload.single('image'), (req, res) => {
     });
 
     tasks.set(jobId, worker);
+    io.emit('update-history'); 
+
 
     // Встановлюємо ліміт часу для скасування завдання
-    const timeout = setTimeout(() => {
+    const timeout = setTimeout(async() => {
         worker.terminate(); // Завершуємо worker, якщо час виконання перевищено
         tasks.delete(jobId);
         io.to(jobId).emit('error', 'Час виконання задачі перевищив ліміт');
+        const task = await Task.findOneAndUpdate({ jobId }, { status: 'failed' });
+        io.emit('update-history');  
     }, MAX_TIME_LIMIT);
 
-    worker.on('message', (message) => {
+    worker.on('message', async (message) => {
         if (message.type === 'progress') {
             io.to(jobId).emit('progress', message.data);
         } else if (message.type === 'result') {
-            clearTimeout(timeout); // Якщо задача завершена в межах часу, скасовуємо таймер
+            clearTimeout(timeout);
+            const task = await Task.findOneAndUpdate({ jobId }, { status: 'completed', resultText: message.data });
             io.to(jobId).emit('result', message.data);
+            io.emit('update-history');  
             tasks.delete(jobId);
             worker.terminate();
         } else if (message.type === 'error') {
-            clearTimeout(timeout); // Якщо помилка, скасовуємо таймер
+            clearTimeout(timeout);
             io.to(jobId).emit('error', message.data);
             tasks.delete(jobId);
             worker.terminate();
@@ -97,8 +121,7 @@ app.post('/api/recognize', upload.single('image'), (req, res) => {
 
     worker.on('error', (error) => {
         console.error('Помилка в worker:', error);
-        clearTimeout(timeout); // Скасовуємо таймер при помилці
-        // io.to(jobId).emit('error', 'Помилка обробки зображення');
+        clearTimeout(timeout); 
         tasks.delete(jobId);
         worker.terminate();
     });
@@ -106,23 +129,34 @@ app.post('/api/recognize', upload.single('image'), (req, res) => {
     worker.on('exit', (code) => {
         if (code !== 0) {
             console.error(`Worker завершився з кодом ${code}`);
-            // io.to(jobId).emit('error', 'Помилка обробки зображення');
         }
         tasks.delete(jobId);
     });
 });
 
 // Маршрут для скасування завдання
-app.post('/api/cancel/:jobId', (req, res) => {
+app.post('/api/cancel/:jobId', async(req, res) => {
     const jobId = req.params.jobId;
     const worker = tasks.get(jobId);
 
     if (worker) {
         worker.terminate(); // Завершуємо worker
         tasks.delete(jobId); // Видаляємо завдання з мапи
+        const task = await Task.findOneAndUpdate({ jobId }, { status: 'canceled' });
+        io.emit('update-history', task);  // Оновлення історії
         res.status(200).json({ success: true, message: 'Задача скасована' });
     } else {
         res.status(404).json({ success: false, message: 'Задачу не знайдено' });
+    }
+});
+
+// Маршрут для отримання історії
+app.get('/api/history', async (req, res) => {
+    try {
+        const tasksHistory = await Task.find().sort({ createdAt: -1 }).limit(10); // Останні 10 задач
+        res.json(tasksHistory);
+    } catch (err) {
+        res.status(500).json({ message: 'Помилка при отриманні історії', error: err });
     }
 });
 
