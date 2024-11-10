@@ -3,13 +3,14 @@ const multer = require('multer');
 const cors = require('cors');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
-const Tesseract = require('tesseract.js');
+const { Worker } = require('worker_threads');
+const path = require('path');
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
-        origin: 'http://localhost:3000', // Дозволений домен для фронтенду
+        origin: 'http://localhost:3000',
         methods: ['GET', 'POST'],
         allowedHeaders: ['Content-Type'],
         credentials: true
@@ -18,7 +19,6 @@ const io = new Server(httpServer, {
 
 const PORT = process.env.PORT || 5000;
 
-// Налаштування CORS для Express
 app.use(cors({
     origin: 'http://localhost:3000',
     methods: ['GET', 'POST'],
@@ -28,17 +28,17 @@ app.use(cors({
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Підключення клієнтів до кімнати за jobId
+// Об'єкт для зберігання активних worker'ів
+const tasks = new Map();
+
 io.on('connection', (socket) => {
     console.log('Новий клієнт підключено:', socket.id);
 
-    // Підписка клієнта на конкретне завдання
     socket.on('join', (jobId) => {
         socket.join(jobId);
         console.log(`Клієнт ${socket.id} приєднався до кімнати ${jobId}`);
     });
 
-    // Від'єднання клієнта
     socket.on('disconnect', () => {
         console.log('Клієнт відключився:', socket.id);
     });
@@ -47,26 +47,61 @@ io.on('connection', (socket) => {
 // Маршрут для обробки зображення
 app.post('/api/recognize', upload.single('image'), (req, res) => {
     const imageBuffer = req.file.buffer;
-    const jobId = Date.now().toString(); // Унікальний ідентифікатор задачі як рядок
+    const jobId = Date.now().toString();
 
-    // Відправляємо jobId клієнту для підключення до кімнати
     res.status(200).json({ jobId, message: 'Завдання розпочато' });
 
-    // Виконання обробки зображення через Tesseract.js
-    Tesseract.recognize(
-        imageBuffer,
-        'eng',
-        {
-            logger: info => {
-                io.to(jobId).emit('progress', info); // Надсилаємо подію прогресу
-            }
-        }
-    ).then(({ data: { text } }) => {
-        io.to(jobId).emit('result', text); // Відправляємо результат після завершення
-    }).catch(error => {
-        console.error(error);
-        io.to(jobId).emit('error', 'Помилка обробки зображення'); // Відправляємо помилку у кімнату
+    // Створюємо новий worker для обробки зображення
+    const worker = new Worker(path.join(__dirname, 'tesseractWorker.js'), {
+        workerData: { imageBuffer }
     });
+
+    // Зберігаємо worker у мапі
+    tasks.set(jobId, worker);
+
+    // Отримуємо повідомлення про прогрес
+    worker.on('message', (message) => {
+        if (message.type === 'progress') {
+            io.to(jobId).emit('progress', message.data);
+        } else if (message.type === 'result') {
+            io.to(jobId).emit('result', message.data);
+            tasks.delete(jobId); // Видаляємо завдання після завершення
+            worker.terminate(); // Завершуємо worker
+        } else if (message.type === 'error') {
+            io.to(jobId).emit('error', message.data);
+            tasks.delete(jobId); // Видаляємо завдання після помилки
+            worker.terminate(); // Завершуємо worker
+        }
+    });
+
+    worker.on('error', (error) => {
+        console.error('Помилка в worker:', error);
+        io.to(jobId).emit('error', error);
+        tasks.delete(jobId); // Видаляємо завдання у разі помилки
+        worker.terminate(); // Завершуємо worker
+    });
+
+    worker.on('exit', (code) => {
+        if (code !== 0) {
+            console.error(`Worker завершився з кодом ${code}`);
+            // io.to(jobId).emit('error', 'Помилка обробки зображення');
+        }
+        tasks.delete(jobId); // Видаляємо завдання після завершення
+    });
+});
+
+// Маршрут для скасування завдання
+app.post('/api/cancel/:jobId', (req, res) => {
+    const jobId = req.params.jobId;
+    const worker = tasks.get(jobId);
+
+    if (worker) {
+        worker.terminate(); // Завершуємо worker
+        tasks.delete(jobId); // Видаляємо завдання з мапи
+        res.status(200).json({ success: true, message: 'Задача скасована' });
+    } else {
+        res.status(404).json({ success: false, message: 'Задачу не знайдено' });
+    }
 });
 
 // Запуск сервера
