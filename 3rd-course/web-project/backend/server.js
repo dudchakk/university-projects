@@ -14,7 +14,7 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
         origin: 'http://localhost:3000',
-        methods: ['GET', 'POST'],
+        methods: ['GET', 'POST','DELETE'],
         allowedHeaders: ['Content-Type'],
         credentials: true
     }
@@ -30,11 +30,7 @@ const MAX_UNKNOWN_VARIABLES = 30000;
 // Максимальний час виконання задачі (наприклад, 30 секунд)
 const MAX_TIME_LIMIT = 30000; // 30 секунд
 
-app.use(cors({
-    origin: 'http://localhost:3000',
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type'],
-}));
+app.use(cors());
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -53,12 +49,28 @@ io.on('connection', (socket) => {
         console.log('Клієнт відключився:', socket.id);
     });
 });
-
+app.delete('/api/clear-tasks', async (req, res) => {
+    try {
+        // Видалення всіх задач з бази даних
+        const deletedTasks = await Task.deleteMany({});
+        res.status(200).json({
+            message: `Видалено ${deletedTasks.deletedCount} задач`,
+        });
+    } catch (error) {
+        console.error('Помилка очищення задач:', error);
+        res.status(500).json({ message: 'Не вдалося очистити задачі.' });
+    }
+});
 // Маршрут для обробки зображення
 app.post('/api/recognize', upload.single('image'), async (req, res) => {
     const imageBuffer = req.file.buffer;
     const jobId = Date.now().toString();
+    const inProgressCount = await Task.countDocuments({ status: 'in_progress' });
 
+    if (inProgressCount >= 5) {
+        io.emit('error', 'Не можна створити більше 5 задач підряд');
+        return res.status(400).json({ message: 'Не можна створити більше 5 задач підряд' });
+    }
     const task = new Task({
         jobId,
         fileName: req.file.originalname,
@@ -69,6 +81,8 @@ app.post('/api/recognize', upload.single('image'), async (req, res) => {
 
 
     await task.save();
+    Task.deleteMany({})
+
     // Перевірка максимальних обмежень
     if (req.file.size > 5 * 1024 * 1024) { // Приклад: обмеження за розміром файлу
         return res.status(400).json({ message: 'Файл занадто великий' });

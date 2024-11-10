@@ -12,17 +12,18 @@ function TextRecognition() {
     const [jobId, setJobId] = useState(null);
     const [history, setHistory] = useState([]);
 
+    const fetchHistory = async () => {
+        try {
+            const response = await fetch('http://localhost:5000/api/history');
+            const data = await response.json();
+            setHistory(data);
+        } catch (error) {
+            console.error('Помилка отримання історії:', error);
+        }
+    };
     // Отримати історію задач при завантаженні компонента
     useEffect(() => {
-        const fetchHistory = async () => {
-            try {
-                const response = await fetch('http://localhost:5000/api/history');
-                const data = await response.json();
-                setHistory(data);
-            } catch (error) {
-                console.error('Помилка отримання історії:', error);
-            }
-        };
+ 
         fetchHistory();
 
         // Підписка на події через Socket.IO для отримання оновлень
@@ -34,7 +35,25 @@ function TextRecognition() {
             socket.off('update-history');
         };
     }, []);
+    const handleClearAllTasks = async () => {
+        try {
+            const response = await fetch('http://localhost:5000/api/clear-tasks', {
+                method: 'DELETE',
+            });
 
+            if (response.status === 200) {
+                const data = await response.json();
+                setError(data.message);
+            } else {
+                const { message } = await response.json();
+                setError(message);
+            }
+            fetchHistory();
+        } catch (error) {
+            setError('Не вдалося очистити задачі');
+            console.error('Помилка запиту на очищення задач:', error);
+        }
+    };
     const handleSubmit = async (event) => {
         event.preventDefault();
         const file = event.target.elements.image.files[0];
@@ -154,7 +173,8 @@ function TextRecognition() {
                 </Alert>
             )}
 
-            {/* Історія */}
+            {history && history.length > 0 &&
+            <Box>
             <Box mt={5} width="80%">
                 <Typography variant="h6">Історія задач:</Typography>
                 <ul>
@@ -170,6 +190,13 @@ function TextRecognition() {
                     ))}
                 </ul>
             </Box>
+                < Box mt={5} >
+                <Button variant="outlined" color="secondary" onClick={handleClearAllTasks}>
+                    Очистити всі задачі
+                </Button>
+            </Box>
+            </Box>
+            }
         </Box>
     );
 }
