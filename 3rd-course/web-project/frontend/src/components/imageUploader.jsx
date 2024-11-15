@@ -25,7 +25,7 @@ function TextRecognition() {
 
   const fetchHistory = async () => {
     try {
-      const response = await fetch('http://localhost:3015/api/history', {
+      const response = await fetch('http://localhost:5002/api/history', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
         },
@@ -38,25 +38,23 @@ function TextRecognition() {
   };
 
   useEffect(() => {
-    if (isAuthenticated ) { 
+    if (isAuthenticated) {
       fetchHistory();
-      const newSocket = io('http://localhost:3015',{
-        autoConnect: false, // Вимикаємо автоматичне підключення
-        transports: ['websocket'],
+      // Підключення до сокетів після авторизації
+      const newSocket = io('http://localhost:5002', {
+        query: { token: localStorage.getItem('authToken') }, // Передаємо токен при підключенні
       });
-      console.log(newSocket);
       setSocket(newSocket);
-  
+
       newSocket.on('update-history', () => {
         fetchHistory();
       });
-  
+
       return () => {
-        // newSocket.disconnect(); // Відключення від сокетів при виході
+        newSocket.disconnect(); // Відключення від сокетів при виході
       };
     }
-  }, []); // Тепер залежність тільки від isAuthenticated та socket
-  
+  }, [isAuthenticated]);
 
   const login = async () => {
     try {
@@ -64,7 +62,7 @@ function TextRecognition() {
       formData.append('username', user.username);
       formData.append('password', user.password);
 
-      const response = await fetch('http://localhost:3015/login', {
+      const response = await fetch('http://localhost:5002/login', {
         method: 'POST',
         body: formData,
       });
@@ -96,7 +94,7 @@ function TextRecognition() {
 
   const handleClearAllTasks = async () => {
     try {
-      const response = await fetch('http://localhost:3015/api/clear-tasks', {
+      const response = await fetch('http://localhost:5002/api/clear-tasks', {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -123,7 +121,7 @@ function TextRecognition() {
     formData.append('image', file);
 
     try {
-      const response = await fetch('http://localhost:3015/api/recognize', {
+      const response = await fetch('http://localhost:5002/api/recognize', {
         method: 'POST',
         body: formData,
         headers: {
@@ -170,7 +168,7 @@ function TextRecognition() {
   };
 
   const handleCancelHistoryTask = (jobId) => {
-    fetch(`http://localhost:3015/api/cancel/${jobId}`, {
+    fetch(`http://localhost:5002/api/cancel/${jobId}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -195,7 +193,7 @@ function TextRecognition() {
 
   const handleCancel = () => {
     if (jobId) {
-      fetch(`http://localhost:3015/api/cancel/${jobId}`, {
+      fetch(`http://localhost:5002/api/cancel/${jobId}`, {
         method: 'POST',
       })
         .then(() => {

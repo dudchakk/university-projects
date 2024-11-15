@@ -2,7 +2,7 @@ const express = require('express')
 const multer = require('multer')
 const cors = require('cors')
 const { createServer } = require('http')
-const server = require('socket.io');
+const { Server } = require('socket.io')
 const { Worker } = require('worker_threads')
 const path = require('path')
 const mongoose = require('mongoose')
@@ -11,13 +11,14 @@ require('dotenv').config()
 
 const app = express()
 const httpServer = createServer(app)
-const io = require('socket.io')(server, {
+const io = new Server(httpServer, {
   cors: {
-    origin: "*", 
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"],
-  }
-});
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST', 'DELETE'],
+    allowedHeaders: ['Content-Type'],
+    credentials: true,
+  },
+})
 
 const PORT = process.env.PORT || 5002
 
