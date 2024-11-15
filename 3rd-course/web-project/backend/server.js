@@ -27,7 +27,7 @@ mongoose
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.log('MongoDB connection error:', err))
 
-const MAX_SYMBOL_COUNT = 50000
+const MAX_FILE_SIZE = 5 * 1024 // 5 MB
 const MAX_TIME_LIMIT = 30000 // 30 секунд
 
 app.use(cors())
@@ -84,20 +84,12 @@ app.post('/api/recognize', upload.single('image'), async (req, res) => {
   await task.save()
   Task.deleteMany({})
 
-  if (req.file.size > 5 * 1024 * 1024) {
-    return res.status(400).json({ message: 'Файл занадто великий' })
-  }
-  const taskComplexity = imageBuffer.length
-
-  if (taskComplexity > MAX_SYMBOL_COUNT) {
+  if (req.file.size > MAX_FILE_SIZE) {
     const task = await Task.findOneAndUpdate({ jobId }, { status: 'failed' })
     io.emit('update-history')
-    return res
-      .status(400)
-      .json({
-        message: `Задача занадто складна. Максимум: ${MAX_SYMBOL_COUNT} змінних`,
-      })
+    return res.status(400).json({ message: 'Файл занадто великий' })
   }
+  console.log(req.file.size)
 
   res.status(200).json({ jobId, message: 'Завдання розпочато' })
 
