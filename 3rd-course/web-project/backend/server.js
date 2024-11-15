@@ -27,7 +27,7 @@ mongoose
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.log('MongoDB connection error:', err))
 
-const MAX_FILE_SIZE = 5 * 1024 // 5 MB
+const MAX_FILE_SIZE = 500 * 1024 // 500 KB
 const MAX_TIME_LIMIT = 30000 // 30 секунд
 
 app.use(cors())

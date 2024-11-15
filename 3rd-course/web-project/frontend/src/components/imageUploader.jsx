@@ -6,6 +6,9 @@ import {
   Typography,
   Alert,
   TextField,
+  List,
+  ListItem,
+  ListItemText,
 } from '@mui/material'
 import { CloudUpload as CloudUploadIcon } from '@mui/icons-material'
 import io from 'socket.io-client'
@@ -40,7 +43,7 @@ function TextRecognition() {
       socket.off('update-history')
     }
   }, [])
-  
+
   const handleClearAllTasks = async () => {
     try {
       const response = await fetch('http://localhost:5002/api/clear-tasks', {
@@ -106,6 +109,25 @@ function TextRecognition() {
       setError('Помилка запиту')
       console.error('Помилка запиту:', error)
     }
+  }
+
+  const handleCancelHistoryTask = (jobId) => {
+    fetch(`http://localhost:5002/api/cancel/${jobId}`, {
+      method: 'POST',
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          setError('Задача скасована')
+          io.emit('update-history')
+        } else {
+          setError('Не вдалося скасувати задачу')
+        }
+      })
+      .catch((err) => {
+        setError('Не вдалося скасувати задачу')
+        console.error(err)
+      })
   }
 
   const handleCancel = () => {
@@ -195,27 +217,58 @@ function TextRecognition() {
       )}
 
       {history && history.length > 0 && (
-        <Box>
-          <Box mt={5} width='80%'>
-            <Typography variant='h6'>Історія задач:</Typography>
-            <ul>
-              {history.map((task) => (
-                <li key={task._id}>
-                  <Typography variant='body1'>
-                    {task.jobId} - {task.status}
-                  </Typography>
-                  {task.resultText && (
-                    <Typography variant='body2'>{task.resultText}</Typography>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </Box>
+        <Box mt={5} width='80%'>
+          <Typography variant='h6' gutterBottom>
+            Історія задач:
+          </Typography>
+          <List>
+            {history.map((task) => (
+              <ListItem
+                key={task._id}
+                sx={{
+                  borderBottom: '1px solid #ddd',
+                  paddingY: 2,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <ListItemText
+                  primary={
+                    <Typography variant='body1'>
+                      {task.jobId} - {task.status}
+                    </Typography>
+                  }
+                  secondary={
+                    task.resultText && (
+                      <Typography
+                        variant='body2'
+                        sx={{ color: 'text.secondary' }}
+                      >
+                        {task.resultText}
+                      </Typography>
+                    )
+                  }
+                />
+                {task.status === 'in_progress' && (
+                  <Button
+                    variant='outlined'
+                    color='error'
+                    size='small'
+                    onClick={() => handleCancelHistoryTask(task.jobId)}
+                  >
+                    Скасувати
+                  </Button>
+                )}
+              </ListItem>
+            ))}
+          </List>
+
           <Box mt={5}>
             <Button
               variant='outlined'
               color='secondary'
               onClick={handleClearAllTasks}
+              sx={{ marginTop: 2 }}
             >
               Очистити всі задачі
             </Button>
