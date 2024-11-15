@@ -119,7 +119,7 @@ function TextRecognition() {
       .then((data) => {
         if (data.success) {
           setError('Задача скасована')
-          io.emit('update-history')
+          socket.emit('update-history')
         } else {
           setError('Не вдалося скасувати задачу')
         }
