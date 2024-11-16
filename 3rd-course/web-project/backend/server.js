@@ -32,25 +32,25 @@ const MAX_TIME_LIMIT = 30000 // 30 секунд
 
 app.use(cors())
 const users = [
-	{
-		username: 'admin',
-		password: 'admin',
-		token: 'FDjdW2AXhp1VkZAmQ84zOdhayaUyWaZYd98tiIwASteqS9tA8dPtVcjDkwtHpasjFREFT4z5b1e2QkVxDwmjZTwi5dX4evoeXpteUrC2hSCQPgTkjt45hea0kF2Jgu4zm5iWQw1TGh3bF01Po2ayudYm20zo13yu00guufLoXDAf',
-	},
-];
+  {
+    username: 'admin',
+    password: 'admin',
+    token:
+      'FDjdW2AXhp1VkZAmQ84zOdhayaUyWaZYd98tiIwASteqS9tA8dPtVcjDkwtHpasjFREFT4z5b1e2QkVxDwmjZTwi5dX4evoeXpteUrC2hSCQPgTkjt45hea0kF2Jgu4zm5iWQw1TGh3bF01Po2ayudYm20zo13yu00guufLoXDAf',
+  },
+]
 const authMiddleware = (req, res, next) => {
-	const token = req.headers.authorization?.split(' ')[1];
-	if (!token) return res.status(401).json({ message: 'Необхідна авторизація' });
+  const token = req.headers.authorization?.split(' ')[1]
+  if (!token) return res.status(401).json({ message: 'Необхідна авторизація' })
 
-	try {
-		const user = users.find(u => u.token === token);
-		if (!user)
-			return res.status(403).json({ message: 'Необхідна авторизація' });
-		next();
-	} catch (error) {
-		res.status(403).json({ message: 'Необхідна авторизація' });
-	}
-};
+  try {
+    const user = users.find((u) => u.token === token)
+    if (!user) return res.status(403).json({ message: 'Необхідна авторизація' })
+    next()
+  } catch (error) {
+    res.status(403).json({ message: 'Необхідна авторизація' })
+  }
+}
 
 const storage = multer.memoryStorage()
 const upload = multer({ storage: storage })
@@ -70,7 +70,7 @@ io.on('connection', (socket) => {
   })
 })
 
-app.delete('/api/clear-tasks',authMiddleware, async (req, res) => {
+app.delete('/api/clear-tasks', authMiddleware, async (req, res) => {
   try {
     const deletedTasks = await Task.deleteMany({})
     res.status(200).json({
@@ -82,89 +82,91 @@ app.delete('/api/clear-tasks',authMiddleware, async (req, res) => {
   }
 })
 
-app.post('/api/recognize', authMiddleware,upload.single('image'), async (req, res) => {
-  const imageBuffer = req.file.buffer
-  const jobId = Date.now().toString()
-  const inProgressCount = await Task.countDocuments({ status: 'in_progress' })
+app.post('/api/recognize', authMiddleware, upload.single('image'), async (req, res) => {
+    const imageBuffer = req.file.buffer
+    const jobId = Date.now().toString()
+    const inProgressCount = await Task.countDocuments({ status: 'in_progress' })
 
-  if (inProgressCount >= 5) {
-    io.emit('error', 'Не можна створити більше 5 задач підряд')
-    return res
-      .status(400)
-      .json({ message: 'Не можна створити більше 5 задач підряд' })
-  }
-  const task = new Task({
-    jobId,
-    fileName: req.file.originalname,
-    status: 'in_progress',
-    progress: 0,
-  })
-  io.emit('update-history', task)
+    if (inProgressCount >= 5) {
+      io.emit('error', 'Не можна створити більше 5 задач підряд')
+      return res
+        .status(400)
+        .json({ message: 'Не можна створити більше 5 задач підряд' })
+    }
+    const task = new Task({
+      jobId,
+      fileName: req.file.originalname,
+      status: 'in_progress',
+      progress: 0,
+    })
+    io.emit('update-history', task)
 
-  await task.save()
-  Task.deleteMany({})
+    await task.save()
+    Task.deleteMany({})
 
-  if (req.file.size > MAX_FILE_SIZE) {
-    const task = await Task.findOneAndUpdate({ jobId }, { status: 'failed' })
-    io.emit('update-history')
-    return res.status(400).json({ message: 'Файл занадто великий' })
-  }
-  console.log(req.file.size)
-
-  res.status(200).json({ jobId, message: 'Завдання розпочато' })
-
-  const worker = new Worker(path.join(__dirname, 'tesseractWorker.js'), {
-    workerData: { imageBuffer },
-  })
-
-  tasks.set(jobId, worker)
-  io.emit('update-history')
-
-  const timeout = setTimeout(async () => {
-    worker.terminate()
-    tasks.delete(jobId)
-    io.to(jobId).emit('error', 'Час виконання задачі перевищив ліміт')
-    const task = await Task.findOneAndUpdate({ jobId }, { status: 'failed' })
-    io.emit('update-history')
-  }, MAX_TIME_LIMIT)
-
-  worker.on('message', async (message) => {
-    if (message.type === 'progress') {
-      io.to(jobId).emit('progress', message.data)
-    } else if (message.type === 'result') {
-      clearTimeout(timeout)
-      const task = await Task.findOneAndUpdate(
-        { jobId },
-        { status: 'completed', resultText: message.data }
-      )
-      io.to(jobId).emit('result', message.data)
+    if (req.file.size > MAX_FILE_SIZE) {
+      const task = await Task.findOneAndUpdate({ jobId }, { status: 'failed' })
       io.emit('update-history')
-      tasks.delete(jobId)
+      return res.status(400).json({ message: 'Файл занадто великий' })
+    }
+
+    res.status(200).json({ jobId, message: 'Завдання розпочато' })
+
+    // запускається worker
+    const worker = new Worker(path.join(__dirname, 'tesseractWorker.js'), {
+      workerData: { imageBuffer },
+    })
+
+    tasks.set(jobId, worker)
+    io.emit('update-history')
+
+    // якщо перевищено час виконання - failed
+    const timeout = setTimeout(async () => {
       worker.terminate()
-    } else if (message.type === 'error') {
+      tasks.delete(jobId)
+      io.to(jobId).emit('error', 'Час виконання задачі перевищив ліміт')
+      const task = await Task.findOneAndUpdate({ jobId }, { status: 'failed' })
+      io.emit('update-history')
+    }, MAX_TIME_LIMIT)
+
+    worker.on('message', async (message) => {
+      if (message.type === 'progress') {
+        io.to(jobId).emit('progress', message.data)
+      } else if (message.type === 'result') {
+        clearTimeout(timeout)
+        const task = await Task.findOneAndUpdate(
+          { jobId },
+          { status: 'completed', resultText: message.data }
+        )
+        io.to(jobId).emit('result', message.data)
+        io.emit('update-history')
+        tasks.delete(jobId)
+        worker.terminate()
+      } else if (message.type === 'error') {
+        clearTimeout(timeout)
+        io.to(jobId).emit('error', message.data)
+        tasks.delete(jobId)
+        worker.terminate()
+      }
+    })
+
+    worker.on('error', (error) => {
+      console.error('Помилка в worker:', error)
       clearTimeout(timeout)
-      io.to(jobId).emit('error', message.data)
       tasks.delete(jobId)
       worker.terminate()
-    }
-  })
+    })
 
-  worker.on('error', (error) => {
-    console.error('Помилка в worker:', error)
-    clearTimeout(timeout)
-    tasks.delete(jobId)
-    worker.terminate()
-  })
+    worker.on('exit', (code) => {
+      if (code !== 0) {
+        console.error(`Worker завершився з кодом ${code}`)
+      }
+      tasks.delete(jobId)
+    })
+  }
+)
 
-  worker.on('exit', (code) => {
-    if (code !== 0) {
-      console.error(`Worker завершився з кодом ${code}`)
-    }
-    tasks.delete(jobId)
-  })
-})
-
-app.post('/api/cancel/:jobId', authMiddleware,async (req, res) => {
+app.post('/api/cancel/:jobId', authMiddleware, async (req, res) => {
   const jobId = req.params.jobId
   const worker = tasks.get(jobId)
 
@@ -178,23 +180,24 @@ app.post('/api/cancel/:jobId', authMiddleware,async (req, res) => {
     res.status(404).json({ success: false, message: 'Задачу не знайдено' })
   }
 })
-app.use(upload.none());
+app.use(upload.none())
 
 app.post('/login', (req, res) => {
   console.log(req.body)
-	const { username, password } = req.body;
+  const { username, password } = req.body
 
+  const user = users.find(
+    (u) => u.username === username && u.password === password
+  )
 
-	const user = users.find(u => u.username === username && u.password === password);
+  if (user) {
+    return res.json({ token: user.token })
+  } else {
+    return res.status(401).json({ message: 'Невірний логін або пароль' })
+  }
+})
 
-	if (user) {
-		return res.json({ token: user.token });
-	} else {
-		return res.status(401).json({ message: 'Невірний логін або пароль' });
-	}
-});
-
-app.get('/api/history',authMiddleware, async (req, res) => {
+app.get('/api/history', authMiddleware, async (req, res) => {
   try {
     const tasksHistory = await Task.find().sort({ createdAt: -1 }).limit(10)
     res.json(tasksHistory)
