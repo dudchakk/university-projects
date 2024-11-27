@@ -82,7 +82,11 @@ app.delete('/api/clear-tasks', authMiddleware, async (req, res) => {
   }
 })
 
-app.post('/api/recognize', authMiddleware, upload.single('image'), async (req, res) => {
+app.post(
+  '/api/recognize',
+  authMiddleware,
+  upload.single('image'),
+  async (req, res) => {
     const imageBuffer = req.file.buffer
     const jobId = Date.now().toString()
     const inProgressCount = await Task.countDocuments({ status: 'in_progress' })
@@ -122,11 +126,17 @@ app.post('/api/recognize', authMiddleware, upload.single('image'), async (req, r
 
     // якщо перевищено час виконання - failed
     const timeout = setTimeout(async () => {
-      worker.terminate()
-      tasks.delete(jobId)
-      io.to(jobId).emit('error', 'Час виконання задачі перевищив ліміт')
-      const task = await Task.findOneAndUpdate({ jobId }, { status: 'failed' })
-      io.emit('update-history')
+      const findedTask = await Task.findOne({ jobId })
+      if (worker && findedTask.status === 'in_progress') {
+        worker.terminate()
+        tasks.delete(jobId)
+        io.to(jobId).emit('error', 'Час виконання задачі перевищив ліміт')
+        const task = await Task.findOneAndUpdate(
+          { jobId },
+          { status: 'failed' }
+        )
+        io.emit('update-history')
+      }
     }, MAX_TIME_LIMIT)
 
     worker.on('message', async (message) => {
@@ -169,7 +179,7 @@ app.post('/api/recognize', authMiddleware, upload.single('image'), async (req, r
 app.post('/api/cancel/:jobId', authMiddleware, async (req, res) => {
   const jobId = req.params.jobId
   const worker = tasks.get(jobId)
-
+  console.log(worker)
   if (worker) {
     worker.terminate()
     tasks.delete(jobId)
