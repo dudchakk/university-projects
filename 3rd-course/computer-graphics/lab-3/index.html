@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Алгоритм Брезенхема</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            display: block;
+            margin: 20px auto;
+        }
+        #info {
+            text-align: center;
+        }
+        #pixel-list {
+            margin: 0 auto;
+            width: 80%;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">Алгоритм Брезенхема для псевдорастра 32x32</h1>
+    <div id="info">
+        <button id="draw-lines">Намалювати відрізки</button>
+    </div>
+    <canvas id="canvas"></canvas>
+    <h2 style="text-align: center;">Список заповнених пікселів:</h2>
+    <div id="pixel-list"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
